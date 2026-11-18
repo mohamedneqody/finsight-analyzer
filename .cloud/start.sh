@@ -4,6 +4,11 @@ cd /workspaces/finsight-analyzer || exit 1
 
 log() { echo "[$(date +%H:%M:%S)] $*"; }
 
+# 0) load .env into the shell env (bot.py loads it itself; this is for guards)
+set -a
+[ -f .env ] && . ./.env
+set +a
+
 # 1) dependencies (fast no-op when already installed)
 if ! python3 -c "import streamlit, plotly, pandas, pdfplumber, openpyxl, pypdfium2, cv2, dotenv, google.genai" >/dev/null 2>&1; then
   log "installing dependencies..."

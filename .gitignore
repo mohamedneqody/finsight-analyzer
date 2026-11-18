@@ -1,0 +1,9 @@
+.env
+cache/
+inbox/
+uploads/
+logs/
+bot.lock
+__pycache__/
+*.pyc
+.streamlit/secrets.toml

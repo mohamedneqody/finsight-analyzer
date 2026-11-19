@@ -37,11 +37,15 @@ else
   log "TELEGRAM_BOT_TOKEN missing - bot skipped"
 fi
 
-# 4) make port 8501 publicly reachable
+# 4) make port 8501 publicly reachable: a brief forward CREATES the tunnel
+#    entry (PATCH alone 404s while unregistered), then PATCH flips it public
+(gh codespace ports forward 8501:18999 >/dev/null 2>&1 &)
+sleep 12
+pkill -f "codespace ports forward" 2>/dev/null || true
 if gh api -X PATCH "/user/codespaces/$CODESPACE_NAME/codespace_ports/8501" -f visibility=open >/dev/null 2>&1; then
   log "port 8501 is public"
 else
-  log "WARN: could not open port via API"
+  log "WARN: port registered; run 'gh codespace ports visibility 8501:public' outside"
 fi
 
 sleep 3

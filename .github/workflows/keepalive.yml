@@ -31,3 +31,10 @@ jobs:
             printf '%s' "$CS_ENV" | gh codespace ssh -c finsight-q7q4pg77qwg9247rw -- "cat > /workspaces/finsight-analyzer/.env && sed -i 's/\r\$//' /workspaces/finsight-analyzer/.env && chmod 600 /workspaces/finsight-analyzer/.env" || true
             gh codespace ssh -c finsight-q7q4pg77qwg9247rw -- "bash /workspaces/finsight-analyzer/.cloud/start.sh"
           fi
+          # port-public: a brief forward CREATES the tunnel entry (PATCH alone
+          # 404s while unregistered); then flip visibility — nothing local remains
+          gh codespace ports forward 8501:18999 -c finsight-q7q4pg77qwg9247rw & FPID=$!
+          sleep 12
+          kill $FPID 2>/dev/null || true
+          gh codespace ports visibility 8501:public -c finsight-q7q4pg77qwg9247rw || true
+          gh codespace ports -c finsight-q7q4pg77qwg9247rw --json sourcePort,visibility

@@ -1,7 +1,11 @@
 name: FinSight keepalive
 on:
-  schedule:
-    - cron: "*/25 * * * *"
+  # cron disabled 2026-11-19: (a) GitHub scheduled runs fired 1/29 in 12h,
+  # (b) keeping the codespace awake 24/7 burns its ~60h/month free compute
+  # quota in ~3 days -> mid-month death. Codespace is NOT a 24/7 host.
+  # Keep for MANUAL wake+heal (also used by تشغيل_السحابة.bat indirectly).
+  # schedule:
+  #   - cron: "*/25 * * * *"
   workflow_dispatch: {}
 concurrency:
   group: finsight-keepalive
@@ -12,17 +16,18 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
-      - name: Keep codespace awake (self-heal if asleep)
+      - name: Wake codespace + restore env + start services
         env:
           GH_TOKEN: ${{ secrets.CS_PAT }}
           CS_ENV: ${{ secrets.CS_ENV }}
         run: |
-          if gh codespace ssh -c finsight-x5wpvq55w4q63vq55 -- "echo ok" 2>/dev/null; then
-            echo "keepalive: codespace awake — connection resets idle timer"
+          if gh codespace ssh -c finsight-q7q4pg77qwg9247rw -- "echo ok" 2>/dev/null; then
+            echo "codespace awake — ensuring services"
+            gh codespace ssh -c finsight-q7q4pg77qwg9247rw -- "bash /workspaces/finsight-analyzer/.cloud/start.sh"
           else
-            echo "keepalive: codespace asleep — starting..."
-            gh api -X POST user/codespaces/finsight-x5wpvq55w4q63vq55/start || true
+            echo "codespace asleep — starting..."
+            gh api -X POST user/codespaces/finsight-q7q4pg77qwg9247rw/start || true
             sleep 50
-            printf '%s' "$CS_ENV" | gh codespace ssh -c finsight-x5wpvq55w4q63vq55 -- "cat > /workspaces/finsight-analyzer/.env && sed -i 's/\r\$//' /workspaces/finsight-analyzer/.env && chmod 600 /workspaces/finsight-analyzer/.env" || true
-            gh codespace ssh -c finsight-x5wpvq55w4q63vq55 -- "bash /workspaces/finsight-analyzer/.cloud/start.sh"
+            printf '%s' "$CS_ENV" | gh codespace ssh -c finsight-q7q4pg77qwg9247rw -- "cat > /workspaces/finsight-analyzer/.env && sed -i 's/\r\$//' /workspaces/finsight-analyzer/.env && chmod 600 /workspaces/finsight-analyzer/.env" || true
+            gh codespace ssh -c finsight-q7q4pg77qwg9247rw -- "bash /workspaces/finsight-analyzer/.cloud/start.sh"
           fi

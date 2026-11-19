@@ -37,16 +37,12 @@ else
   log "TELEGRAM_BOT_TOKEN missing - bot skipped"
 fi
 
-# 4) make port 8501 publicly reachable: a brief forward CREATES the tunnel
-#    entry (PATCH alone 404s while unregistered), then PATCH flips it public
-(gh codespace ports forward 8501:18999 >/dev/null 2>&1 &)
-sleep 12
-pkill -f "codespace ports forward" 2>/dev/null || true
-if gh api -X PATCH "/user/codespaces/$CODESPACE_NAME/codespace_ports/8501" -f visibility=open >/dev/null 2>&1; then
-  log "port 8501 is public"
-else
-  log "WARN: port registered; run 'gh codespace ports visibility 8501:public' outside"
-fi
+# 4) port 8501 public: the tunnel entry can ONLY be created from OUTSIDE the
+#    container (in-container gh lacks the codespace scope — verified twice).
+#    تشغيل_السحابة.bat and the keepalive workflow own this step:
+#      gh codespace ports forward 8501:18999 -c <cs>   # ~12s, then kill it
+#      gh codespace ports visibility 8501:public -c <cs>
+log "NOTE: public URL still 404? run the port trigger from outside (bat/workflow)"
 
 sleep 3
 log "streamlit health: $(curl -s http://localhost:8501/_stcore/health || echo 'not up yet')"

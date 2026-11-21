@@ -992,7 +992,11 @@ def sec_reports(vm: dict, results: dict, analysis) -> None:
             if is_ar
             else "Same numbers with preliminary/final flag — browser print-to-PDF ready"
         )
-    soffice = Path(r"C:\Program Files\LibreOffice\program\soffice.exe")
+    import shutil as _shutil
+
+    soffice = Path(os.environ.get("SOFFICE_PATH")
+                   or _shutil.which("soffice")
+                   or r"C:\Program Files\LibreOffice\program\soffice.exe")
     if not soffice.exists():
         render_empty_state(
             "تصدير PDF المباشر غير متاح" if is_ar else "Direct PDF export unavailable",
@@ -1178,13 +1182,13 @@ def sec_review(vm: dict, results: dict, raw: bytes | None) -> None:
     if not (os.environ.get("REVIEWERS_FILE") or os.environ.get("REVIEWERS")):
         render_empty_state(
             "المراجعة البشرية غير مفعّلة" if is_ar else "Human review disabled",
-            "تتطلب المراجعة الموقّعة إعداد سجل مراجعين (REVIEWERS_FILE) ومفتاح توقيع (REVIEW_HMAC_KEY) في ملف ‎.env."
+            "تتطلب المراجعة الموقّعة إعداد سجل مراجعين (REVIEWERS_FILE) ومفتاح توقيع (REVIEW_HMAC_KEY) في ‎.env أو Streamlit Secrets."
             if is_ar
-            else "Signed human review requires REVIEWERS_FILE and REVIEW_HMAC_KEY configured in .env.",
+            else "Signed human review requires REVIEWERS_FILE and REVIEW_HMAC_KEY in .env or Streamlit Secrets.",
             icon="🔐",
-            next_step="أضف إعدادات المراجعين في .env ثم أعد تشغيل التطبيق."
+            next_step="أضف إعدادات المراجعين في ‎.env أو Streamlit Secrets ثم أعد تشغيل التطبيق."
             if is_ar
-            else "Add reviewer credentials in .env and restart the app.",
+            else "Add reviewer credentials in .env or Streamlit Secrets and restart the app.",
         )
         return
     if raw is None:

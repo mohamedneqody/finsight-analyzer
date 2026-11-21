@@ -16,8 +16,10 @@ load_dotenv(PROJECT_ROOT / ".env")
 try:
     import streamlit as _st  # noqa: E402
 
-    for _key in ("GEMINI_API_KEYS", "GEMINI_MODEL", "REPORT_LANGUAGE",
-                 "TELEGRAM_BOT_TOKEN", "TELEGRAM_ALLOWED_IDS"):
+    for _key in ("GEMINI_API_KEYS", "GEMINI_MODELS", "GEMINI_MODEL",
+                 "REPORT_LANGUAGE", "TELEGRAM_BOT_TOKEN", "TELEGRAM_ALLOWED_IDS",
+                 "LOCAL_OCR_ENABLED", "LOCAL_OCR_WORKERS", "FOCUSED_LOCAL_VERIFY",
+                 "REVIEW_HMAC_KEY", "REVIEW_LOG_PATH", "REVIEWER_NAME"):
         if not os.getenv(_key):
             try:
                 _v = _st.secrets.get(_key)
@@ -25,6 +27,23 @@ try:
                     os.environ[_key] = str(_v)
             except Exception:
                 pass
+
+    # سجل المراجعين على السحابة: JSON كامل في سر واحد (REVIEWERS_JSON) يُكتب
+    # مرة واحدة لملف وقت التشغيل ويُضبط REVIEWERS_FILE عليه — الملف يحوي
+    # hashes فقط (PBKDF2) ولا يحوي أي PIN نصي.
+    try:
+        _rv = _st.secrets.get("REVIEWERS_JSON")
+        if _rv and not os.getenv("REVIEWERS_FILE"):
+            import json as _json
+            import tempfile as _tempfile
+
+            _parsed = _json.loads(str(_rv))
+            if isinstance(_parsed, dict) and _parsed.get("reviewers"):
+                _rp = Path(_tempfile.gettempdir()) / "finsight_reviewers.json"
+                _rp.write_text(_json.dumps(_parsed, ensure_ascii=False), encoding="utf-8")
+                os.environ["REVIEWERS_FILE"] = str(_rp)
+    except Exception:
+        pass
 except Exception:
     pass  # بيئة بلا streamlit (سكربتات) — .env يكفي
 
